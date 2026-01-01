@@ -1,9 +1,9 @@
 // NeuroHarmonic - Interactive Sound Playground
 // Explore and create your own frequency combinations
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Square, Volume2, Plus, Minus, Waves } from 'lucide-react';
+import { Play, Square, Volume2, Waves } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Slider } from '../components/ui/Slider';
@@ -12,11 +12,6 @@ import { ParticleField } from '../components/visualizers/ParticleField';
 import { useAudioEngine } from '../hooks/useAudioEngine';
 import { SOLFEGGIO_FREQUENCIES, BRAINWAVE_STATES, CARRIER_FREQUENCIES } from '../data/frequencies';
 
-interface ActiveFrequency {
-  hz: number;
-  type: 'binaural' | 'solfeggio' | 'carrier';
-  volume: number;
-}
 
 export function PlaygroundPage() {
   const { isPlaying, start, stop, morphTo, setVolume } = useAudioEngine();

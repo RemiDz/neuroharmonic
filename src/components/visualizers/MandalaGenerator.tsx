@@ -21,7 +21,7 @@ export function MandalaGenerator({
   size = 300
 }: MandalaGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const { reducedMotion, visualIntensity } = useSessionStore();
   const rotation = useRef(0);
 

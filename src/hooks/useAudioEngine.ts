@@ -1,16 +1,18 @@
 // NeuroHarmonic - Audio Engine Hook
 
 import { useCallback, useEffect, useState } from 'react';
-import { audioEngine, AudioEngineConfig } from '../audio/AudioEngine';
-import { sessionEngine, SessionState, SessionProgress } from '../audio/SessionEngine';
-import { HealingProtocol, ProtocolPhase } from '../data/protocols';
+import { audioEngine } from '../audio/AudioEngine';
+import type { AudioEngineConfig } from '../audio/AudioEngine';
+import { sessionEngine } from '../audio/SessionEngine';
+import type { SessionState, SessionProgress } from '../audio/SessionEngine';
+import type { HealingProtocol, ProtocolPhase } from '../data/protocols';
 import { useSessionStore } from '../stores/sessionStore';
 
 export function useAudioEngine() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentConfig, setCurrentConfig] = useState<AudioEngineConfig | null>(null);
   
-  const { masterVolume, setCurrentProtocol, setSessionState, setProgress } = useSessionStore();
+  const { masterVolume } = useSessionStore();
 
   const start = useCallback(async (config: Partial<AudioEngineConfig>) => {
     const fullConfig = {

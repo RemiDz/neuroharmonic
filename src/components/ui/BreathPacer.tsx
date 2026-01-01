@@ -2,8 +2,8 @@
 // Synchronized breathing guide with audio
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Wind, Pause, Play } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Pause, Play } from 'lucide-react';
 import { useAudioEngine } from '../../hooks/useAudioEngine';
 
 interface BreathPacerProps {
@@ -43,7 +43,7 @@ export function BreathPacer({
   const [countdown, setCountdown] = useState(inhaleTime);
   const [totalCycles, setTotalCycles] = useState(0);
   const { breathSync } = useAudioEngine();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getPhaseTime = useCallback((p: BreathPhase) => {
     switch (p) {

@@ -4,14 +4,13 @@
 import { motion } from 'framer-motion';
 import { Play, Clock, Flame, Sparkles, Brain, Heart, Zap } from 'lucide-react';
 import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 import { useSessionStore } from '../stores/sessionStore';
 import { HEALING_PROTOCOLS, getMicroSessions, getProtocolsByTimeOfDay } from '../data/protocols';
 import type { HealingProtocol } from '../data/protocols';
 
 interface HomePageProps {
   onSelectProtocol: (protocol: HealingProtocol) => void;
-  onNavigate: (page: string) => void;
+  onNavigate?: (page: string) => void;
 }
 
 function getTimeOfDay(): 'morning' | 'afternoon' | 'evening' | 'night' {
@@ -40,7 +39,7 @@ function formatDuration(seconds: number): string {
   return remainingMins > 0 ? `${hours}h ${remainingMins}m` : `${hours}h`;
 }
 
-export function HomePage({ onSelectProtocol, onNavigate }: HomePageProps) {
+export function HomePage({ onSelectProtocol }: HomePageProps) {
   const { currentStreak, totalMinutes, sessionHistory } = useSessionStore();
   
   const timeOfDay = getTimeOfDay();

@@ -4,8 +4,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Square, Volume2, VolumeX } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { HealingProtocol } from '../../data/protocols';
-import { SessionState, SessionProgress } from '../../audio/SessionEngine';
+import type { HealingProtocol } from '../../data/protocols';
 import { useSessionEngine } from '../../hooks/useAudioEngine';
 import { useSessionStore } from '../../stores/sessionStore';
 import { Button } from '../ui/Button';

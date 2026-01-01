@@ -1,10 +1,7 @@
 // NeuroHarmonic - Settings Page
 
 import { motion } from 'framer-motion';
-import { 
-  Volume2, Eye, Moon, Accessibility, 
-  Smartphone, Info, ChevronRight, X
-} from 'lucide-react';
+import { Accessibility, Info, X } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Slider } from '../components/ui/Slider';
 import { useSessionStore } from '../stores/sessionStore';
@@ -24,8 +21,6 @@ export function SettingsPage({ onClose }: SettingsPageProps) {
     setPreferredCarrierFrequency,
     reducedMotion,
     setReducedMotion,
-    darkMode,
-    setDarkMode,
     currentStreak,
     longestStreak,
     totalMinutes,

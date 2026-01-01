@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Clock, Filter } from 'lucide-react';
+import { Play, Clock } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { HEALING_PROTOCOLS, HealingProtocol, getProtocolsByCategory } from '../data/protocols';
 

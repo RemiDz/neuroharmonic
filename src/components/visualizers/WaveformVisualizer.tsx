@@ -22,7 +22,7 @@ export function WaveformVisualizer({
   size = 'md'
 }: WaveformVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const { reducedMotion, visualIntensity } = useSessionStore();
   const [dimensions, setDimensions] = useState({ width: 300, height: 150 });
 

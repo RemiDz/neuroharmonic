@@ -1,19 +1,19 @@
 // NeuroHarmonic - ADHD Support Suite
 // Powerful tools designed specifically for ADHD minds
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Play, Pause, RotateCcw, Zap, Heart, Brain, 
-  Timer, Volume2, Sparkles, RefreshCw, Coffee
+  Play, Pause, RotateCcw, Zap, Heart,
+  Timer, Sparkles, RefreshCw, Coffee
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 import { Slider } from '../components/ui/Slider';
 import { WaveformVisualizer } from '../components/visualizers/WaveformVisualizer';
 import { MandalaGenerator } from '../components/visualizers/MandalaGenerator';
 import { useAudioEngine } from '../hooks/useAudioEngine';
-import { HEALING_PROTOCOLS, HealingProtocol } from '../data/protocols';
+import { HEALING_PROTOCOLS } from '../data/protocols';
+import type { HealingProtocol } from '../data/protocols';
 
 interface ADHDPageProps {
   onSelectProtocol: (protocol: HealingProtocol) => void;
@@ -39,7 +39,7 @@ export function ADHDPage({ onSelectProtocol }: ADHDPageProps) {
   const [timeLeft, setTimeLeft] = useState(FOCUS_TIME);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [pomodorosCompleted, setPomodorosCompleted] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Audio Engine
   const { isPlaying, start, stop, morphTo } = useAudioEngine();
@@ -574,7 +574,7 @@ export function ADHDPage({ onSelectProtocol }: ADHDPageProps) {
                 step={0.01}
                 onChange={setVisualIntensity}
                 label="Visual Intensity"
-                formatValue={(v) => `${Math.round(v * 100)}%`}
+                formatValue={(v: number) => `${Math.round(v * 100)}%`}
                 color="var(--accent-violet)"
               />
 
