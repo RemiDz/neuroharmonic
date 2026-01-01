@@ -1,7 +1,7 @@
 // NeuroHarmonic - Slider Component
 
 import { motion } from 'framer-motion';
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback } from 'react';
 
 interface SliderProps {
   value: number;
@@ -14,7 +14,14 @@ interface SliderProps {
   formatValue?: (value: number) => string;
   color?: string;
   disabled?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
+
+const sizeConfig = {
+  sm: { trackHeight: 4, thumbSize: 16 },
+  md: { trackHeight: 6, thumbSize: 20 },
+  lg: { trackHeight: 8, thumbSize: 24 }
+};
 
 export function Slider({
   value,
@@ -26,11 +33,13 @@ export function Slider({
   showValue = true,
   formatValue = (v) => v.toString(),
   color = 'var(--accent-cyan)',
-  disabled = false
+  disabled = false,
+  size = 'md'
 }: SliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   
+  const { trackHeight, thumbSize } = sizeConfig[size];
   const percentage = ((value - min) / (max - min)) * 100;
 
   const handleChange = useCallback((clientX: number) => {
@@ -46,47 +55,27 @@ export function Slider({
     onChange(clampedValue);
   }, [min, max, step, onChange, disabled]);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (disabled) return;
+    e.preventDefault();
     setIsDragging(true);
     handleChange(e.clientX);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (disabled) return;
-    setIsDragging(true);
-    handleChange(e.touches[0].clientX);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) handleChange(e.clientX);
-    };
-    
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isDragging) handleChange(e.touches[0].clientX);
-    };
-    
-    const handleEnd = () => setIsDragging(false);
-
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleEnd);
-      window.addEventListener('touchmove', handleTouchMove);
-      window.addEventListener('touchend', handleEnd);
+      handleChange(e.clientX);
     }
+  };
 
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleEnd);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleEnd);
-    };
-  }, [isDragging, handleChange]);
+  const handlePointerUp = () => {
+    setIsDragging(false);
+  };
 
   return (
     <div style={{ 
-      opacity: disabled ? 0.5 : 1,
+      opacity: disabled ? 0.4 : 1,
       pointerEvents: disabled ? 'none' : 'auto'
     }}>
       {(label || showValue) && (
@@ -94,7 +83,7 @@ export function Slider({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '8px'
+          marginBottom: 'var(--space-sm)'
         }}>
           {label && (
             <span style={{ 
@@ -120,28 +109,41 @@ export function Slider({
       
       <div
         ref={trackRef}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         style={{
           position: 'relative',
-          height: '8px',
-          background: 'var(--bg-tertiary)',
-          borderRadius: 'var(--radius-full)',
+          height: thumbSize,
+          display: 'flex',
+          alignItems: 'center',
           cursor: disabled ? 'not-allowed' : 'pointer',
           touchAction: 'none'
         }}
       >
+        {/* Track background */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            height: trackHeight,
+            background: 'var(--bg-elevated)',
+            borderRadius: 'var(--radius-full)'
+          }}
+        />
+        
         {/* Filled track */}
         <motion.div
           style={{
             position: 'absolute',
             left: 0,
-            top: 0,
-            height: '100%',
+            height: trackHeight,
             width: `${percentage}%`,
             background: color,
             borderRadius: 'var(--radius-full)',
-            boxShadow: isDragging ? `0 0 10px ${color}` : 'none'
+            boxShadow: isDragging ? `0 0 12px ${color}` : 'none'
           }}
           animate={{ width: `${percentage}%` }}
           transition={{ duration: 0.1 }}
@@ -151,16 +153,16 @@ export function Slider({
         <motion.div
           style={{
             position: 'absolute',
-            top: '50%',
             left: `${percentage}%`,
-            width: '20px',
-            height: '20px',
-            background: 'white',
+            width: thumbSize,
+            height: thumbSize,
+            background: '#FFFFFF',
             borderRadius: '50%',
-            transform: 'translate(-50%, -50%)',
-            boxShadow: `0 2px 8px rgba(0,0,0,0.3), 0 0 0 3px ${isDragging ? color : 'transparent'}`
+            transform: 'translateX(-50%)',
+            boxShadow: `var(--shadow-sm), 0 0 0 ${isDragging ? 4 : 0}px ${color}40`,
+            transition: 'box-shadow var(--transition-fast)'
           }}
-          animate={{ scale: isDragging ? 1.2 : 1 }}
+          animate={{ scale: isDragging ? 1.15 : 1 }}
           transition={{ duration: 0.15 }}
         />
       </div>

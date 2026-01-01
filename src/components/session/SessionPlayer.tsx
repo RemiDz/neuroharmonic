@@ -1,17 +1,15 @@
-// NeuroHarmonic - Session Player Component
-// The heart of the healing experience
+// NeuroHarmonic - Session Player
+// Full-screen session playback with visualizations
 
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Square, Volume2, VolumeX } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Play, Pause, X } from 'lucide-react';
 import type { HealingProtocol } from '../../data/protocols';
-import { useSessionEngine } from '../../hooks/useAudioEngine';
-import { useSessionStore } from '../../stores/sessionStore';
-import { Button } from '../ui/Button';
+import { AudioEngine } from '../../audio/AudioEngine';
+import { useAppStore } from '../../stores/appStore';
 import { Slider } from '../ui/Slider';
-import { Card } from '../ui/Card';
-import { WaveformVisualizer } from '../visualizers/WaveformVisualizer';
 import { ParticleField } from '../visualizers/ParticleField';
+import { WaveformDisplay } from '../visualizers/WaveformDisplay';
 
 interface SessionPlayerProps {
   protocol: HealingProtocol;
@@ -24,395 +22,342 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function getBrainwaveType(frequency: number): string {
-  if (frequency <= 4) return 'delta';
-  if (frequency <= 8) return 'theta';
-  if (frequency <= 13) return 'alpha';
-  if (frequency <= 30) return 'beta';
-  return 'gamma';
-}
-
 export function SessionPlayer({ protocol, onClose }: SessionPlayerProps) {
-  const { state, progress, currentPhase, startSession, pause, resume, stop } = useSessionEngine();
-  const { masterVolume, setMasterVolume, intention, setIntention } = useSessionStore();
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [showIntention, setShowIntention] = useState(true);
-  const [localIntention, setLocalIntention] = useState('');
+  const { masterVolume, setMasterVolume, carrierFrequency, addSessionToHistory, updateStreak } = useAppStore();
+  
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+  const [, setPhaseElapsedSeconds] = useState(0);
+  const [totalElapsed, setTotalElapsed] = useState(0);
+  const [showControls, setShowControls] = useState(true);
+  
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentPhase = protocol.phases[currentPhaseIndex];
+  
+  const totalProgress = totalElapsed / protocol.duration;
+  
+  const currentFrequency = currentPhase.beatFrequency;
 
-  useEffect(() => {
-    // Auto-start after intention is set or dismissed
-    if (!showIntention && state === 'idle') {
-      startSession(protocol);
+  const startSession = useCallback(async () => {
+    await AudioEngine.start({
+      carrierFrequency,
+      beatFrequency: currentPhase.beatFrequency,
+      volume: masterVolume,
+      solfeggioFrequencies: currentPhase.solfeggioLayers || [],
+      isochronicRate: currentPhase.isochronicRate || 0
+    });
+    setIsPlaying(true);
+  }, [carrierFrequency, currentPhase, masterVolume]);
+
+  const pauseSession = useCallback(async () => {
+    await AudioEngine.stop();
+    setIsPlaying(false);
+  }, []);
+
+  const stopSession = useCallback(async () => {
+    await AudioEngine.stop();
+    setIsPlaying(false);
+    
+    // Record completed session if at least 30 seconds
+    if (totalElapsed >= 30) {
+      addSessionToHistory({
+        protocolId: protocol.id,
+        protocolName: protocol.name,
+        completedAt: Date.now(),
+        duration: totalElapsed,
+        category: protocol.category
+      });
+      updateStreak();
     }
-  }, [showIntention, state, protocol, startSession]);
-
-  const handleSetIntention = () => {
-    setIntention(localIntention);
-    setShowIntention(false);
-  };
-
-  const handleSkipIntention = () => {
-    setShowIntention(false);
-  };
-
-  const handlePlayPause = () => {
-    if (state === 'playing' || state === 'morphing') {
-      pause();
-    } else if (state === 'paused') {
-      resume();
-    }
-  };
-
-  const handleStop = async () => {
-    await stop();
+    
     onClose();
-  };
+  }, [totalElapsed, protocol, addSessionToHistory, updateStreak, onClose]);
 
-  const currentFrequency = progress?.currentFrequency ?? protocol.phases[0].targetFrequency;
-  const brainwaveType = getBrainwaveType(currentFrequency);
+  // Timer logic
+  useEffect(() => {
+    if (isPlaying) {
+      intervalRef.current = setInterval(() => {
+        setPhaseElapsedSeconds(prev => {
+          const newElapsed = prev + 1;
+          
+          // Check if phase complete
+          if (newElapsed >= currentPhase.duration) {
+            const nextIndex = currentPhaseIndex + 1;
+            
+            if (nextIndex >= protocol.phases.length) {
+              // Session complete
+              stopSession();
+              return prev;
+            }
+            
+            // Move to next phase
+            setCurrentPhaseIndex(nextIndex);
+            const nextPhase = protocol.phases[nextIndex];
+            
+            // Morph audio to next phase
+            AudioEngine.morphTo({
+              beatFrequency: nextPhase.beatFrequency,
+              solfeggioFrequencies: nextPhase.solfeggioLayers || [],
+              isochronicRate: nextPhase.isochronicRate || 0
+            }, 30);
+            
+            return 0;
+          }
+          
+          return newElapsed;
+        });
+        
+        setTotalElapsed(prev => prev + 1);
+      }, 1000);
+    }
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isPlaying, currentPhaseIndex, currentPhase.duration, protocol.phases, stopSession]);
+
+  // Volume sync
+  useEffect(() => {
+    if (isPlaying) {
+      AudioEngine.setVolume(masterVolume);
+    }
+  }, [masterVolume, isPlaying]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      AudioEngine.stop();
+    };
+  }, []);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      onClick={() => setShowControls(prev => !prev)}
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'var(--bg-primary)',
+        background: '#000',
         zIndex: 200,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden'
       }}
     >
-      {/* Background Effects */}
+      {/* Background Visualization */}
       <ParticleField
-        isPlaying={state === 'playing' || state === 'morphing'}
+        isPlaying={isPlaying}
         frequency={currentFrequency}
         color={protocol.color}
-        particleCount={40}
+        particleCount={50}
       />
 
-      {/* Intention Setting Modal */}
+      {/* Header */}
       <AnimatePresence>
-        {showIntention && (
+        {showControls && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            onClick={(e) => e.stopPropagation()}
             style={{
               position: 'absolute',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.8)',
-              backdropFilter: 'blur(10px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 'var(--spacing-lg)',
+              top: 0,
+              left: 0,
+              right: 0,
+              padding: 'var(--space-lg)',
+              paddingTop: 'max(var(--space-lg), env(safe-area-inset-top))',
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)',
               zIndex: 10
             }}
           >
-            <Card variant="glass" padding="lg" style={{ maxWidth: 400, width: '100%' }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontFamily: 'var(--font-display)',
-                marginBottom: 'var(--spacing-md)',
-                textAlign: 'center'
-              }}>
-                Set Your Intention
-              </h2>
-              
-              <p style={{
-                color: 'var(--text-secondary)',
-                textAlign: 'center',
-                marginBottom: 'var(--spacing-lg)',
-                fontSize: '0.9rem'
-              }}>
-                What would you like to focus on during this session?
-              </p>
-
-              <textarea
-                value={localIntention}
-                onChange={(e) => setLocalIntention(e.target.value)}
-                placeholder="I am open to healing..."
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button
+                onClick={stopSession}
                 style={{
-                  width: '100%',
-                  padding: 'var(--spacing-md)',
-                  background: 'var(--bg-tertiary)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--text-primary)',
-                  fontFamily: 'inherit',
-                  fontSize: '1rem',
-                  minHeight: 100,
-                  resize: 'none',
-                  marginBottom: 'var(--spacing-lg)'
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
-              />
-
-              <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
-                <Button
-                  variant="ghost"
-                  onClick={handleSkipIntention}
-                  fullWidth
-                >
-                  Skip
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleSetIntention}
-                  fullWidth
-                >
-                  Begin Session
-                </Button>
+              >
+                <X size={22} color="white" />
+              </button>
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 2 }}>
+                  {currentPhase.name}
+                </div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+                  {protocol.name}
+                </div>
               </div>
-            </Card>
+              
+              <div style={{ width: 44 }} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 'var(--spacing-lg)',
-        paddingTop: 'var(--spacing-2xl)',
-        position: 'relative',
-        zIndex: 1
-      }}>
-        {/* Header */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          style={{ textAlign: 'center', marginBottom: 'var(--spacing-xl)' }}
-        >
-          <span style={{ fontSize: '2rem', marginBottom: 'var(--spacing-sm)', display: 'block' }}>
-            {protocol.icon}
-          </span>
-          <h1 style={{
-            fontSize: '1.5rem',
-            fontFamily: 'var(--font-display)',
-            marginBottom: 'var(--spacing-xs)'
-          }}>
-            {protocol.name}
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            {currentPhase?.name || protocol.phases[0].name}
-          </p>
-        </motion.div>
-
-        {/* Visualization Area */}
-        <div style={{
+      {/* Center Content */}
+      <div
+        style={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 'var(--spacing-xl)'
-        }}>
-          <WaveformVisualizer
+          padding: 'var(--space-xl)',
+          position: 'relative',
+          zIndex: 5
+        }}
+      >
+        {/* Frequency Display */}
+        <motion.div
+          animate={{
+            scale: isPlaying ? [1, 1.02, 1] : 1
+          }}
+          transition={{
+            duration: 2,
+            repeat: isPlaying ? Infinity : 0,
+            ease: 'easeInOut'
+          }}
+          style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}
+        >
+          <div style={{
+            fontSize: 'clamp(3rem, 12vw, 5rem)',
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            background: protocol.gradient,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            {currentFrequency.toFixed(1)} Hz
+          </div>
+          <div style={{
+            fontSize: '0.9rem',
+            color: 'var(--text-secondary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.15em'
+          }}>
+            {currentFrequency <= 4 ? 'Delta' : 
+             currentFrequency <= 8 ? 'Theta' : 
+             currentFrequency <= 13 ? 'Alpha' : 
+             currentFrequency <= 30 ? 'Beta' : 'Gamma'} Waves
+          </div>
+        </motion.div>
+
+        {/* Waveform */}
+        <div style={{ width: '100%', maxWidth: 400, marginBottom: 'var(--space-xl)' }}>
+          <WaveformDisplay
+            isPlaying={isPlaying}
             frequency={currentFrequency}
-            isPlaying={state === 'playing' || state === 'morphing'}
-            brainwaveType={brainwaveType}
-            size="full"
+            color={protocol.color}
+            height={100}
           />
-
-          {/* Frequency Display */}
-          <motion.div
-            animate={{
-              scale: state === 'playing' ? [1, 1.02, 1] : 1
-            }}
-            transition={{
-              duration: 2,
-              repeat: state === 'playing' ? Infinity : 0,
-              ease: 'easeInOut'
-            }}
-            style={{
-              textAlign: 'center'
-            }}
-          >
-            <div style={{
-              fontSize: '3rem',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700,
-              background: protocol.gradient,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
-              {currentFrequency.toFixed(1)} Hz
-            </div>
-            <div style={{
-              color: 'var(--text-secondary)',
-              fontSize: '0.9rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em'
-            }}>
-              {brainwaveType} waves
-            </div>
-          </motion.div>
-
-          {/* Intention Display */}
-          {intention && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              style={{
-                textAlign: 'center',
-                fontStyle: 'italic',
-                color: 'var(--text-secondary)',
-                maxWidth: 300,
-                fontSize: '0.9rem'
-              }}
-            >
-              "{intention}"
-            </motion.div>
-          )}
         </div>
 
-        {/* Progress Bar */}
-        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-          <div style={{
+        {/* Play Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            isPlaying ? pauseSession() : startSession();
+          }}
+          style={{
+            width: 88,
+            height: 88,
+            borderRadius: '50%',
+            background: protocol.gradient,
+            border: 'none',
             display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: 'var(--spacing-sm)',
-            fontSize: '0.8rem',
-            color: 'var(--text-secondary)'
-          }}>
-            <span>{formatTime(progress?.elapsedTime ?? 0)}</span>
-            <span>-{formatTime(progress?.remainingTime ?? protocol.duration)}</span>
-          </div>
-          
-          <div style={{
-            height: 6,
-            background: 'var(--bg-tertiary)',
-            borderRadius: 'var(--radius-full)',
-            overflow: 'hidden'
-          }}>
-            <motion.div
-              style={{
-                height: '100%',
-                background: protocol.gradient,
-                borderRadius: 'var(--radius-full)'
-              }}
-              animate={{ width: `${(progress?.totalProgress ?? 0) * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 'var(--spacing-lg)',
-          paddingBottom: 'var(--spacing-2xl)'
-        }}>
-          {/* Volume Control */}
-          <div style={{ position: 'relative' }}>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setShowVolumeSlider(!showVolumeSlider)}
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                background: 'var(--bg-tertiary)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: 'var(--text-secondary)'
-              }}
-            >
-              {masterVolume > 0 ? <Volume2 size={20} /> : <VolumeX size={20} />}
-            </motion.button>
-
-            <AnimatePresence>
-              {showVolumeSlider && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  style={{
-                    position: 'absolute',
-                    bottom: '100%',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    marginBottom: 'var(--spacing-md)',
-                    background: 'var(--bg-secondary)',
-                    padding: 'var(--spacing-md)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-subtle)',
-                    width: 150
-                  }}
-                >
-                  <Slider
-                    value={masterVolume}
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    onChange={setMasterVolume}
-                    formatValue={(v) => `${Math.round(v * 100)}%`}
-                    color={protocol.color}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Play/Pause Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handlePlayPause}
-            disabled={state === 'idle'}
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: '50%',
-              background: protocol.gradient,
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'white',
-              boxShadow: `0 0 30px ${protocol.color}50`
-            }}
-          >
-            {state === 'playing' || state === 'morphing' ? (
-              <Pause size={28} fill="white" />
-            ) : (
-              <Play size={28} fill="white" style={{ marginLeft: 4 }} />
-            )}
-          </motion.button>
-
-          {/* Stop Button */}
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={handleStop}
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              background: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)'
-            }}
-          >
-            <Square size={18} fill="currentColor" />
-          </motion.button>
-        </div>
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: `0 0 40px ${protocol.color}50`
+          }}
+        >
+          {isPlaying ? (
+            <Pause size={36} fill="white" color="white" />
+          ) : (
+            <Play size={36} fill="white" color="white" style={{ marginLeft: 4 }} />
+          )}
+        </motion.button>
       </div>
+
+      {/* Bottom Controls */}
+      <AnimatePresence>
+        {showControls && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: 'var(--space-lg)',
+              paddingBottom: 'max(var(--space-lg), env(safe-area-inset-bottom))',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)',
+              zIndex: 10
+            }}
+          >
+            {/* Progress */}
+            <div style={{ marginBottom: 'var(--space-lg)' }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: 'var(--space-sm)',
+                fontSize: '0.85rem',
+                color: 'var(--text-secondary)'
+              }}>
+                <span>{formatTime(totalElapsed)}</span>
+                <span>-{formatTime(protocol.duration - totalElapsed)}</span>
+              </div>
+              
+              <div style={{
+                height: 6,
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: 'var(--radius-full)',
+                overflow: 'hidden'
+              }}>
+                <motion.div
+                  style={{
+                    height: '100%',
+                    background: protocol.gradient,
+                    borderRadius: 'var(--radius-full)'
+                  }}
+                  animate={{ width: `${totalProgress * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+
+            {/* Volume */}
+            <Slider
+              value={masterVolume}
+              min={0}
+              max={1}
+              step={0.01}
+              onChange={setMasterVolume}
+              label="Volume"
+              formatValue={(v: number) => `${Math.round(v * 100)}%`}
+              color={protocol.color}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

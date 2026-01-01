@@ -1,18 +1,28 @@
-// NeuroHarmonic - Frequency Definitions
-// Ancient wisdom meets modern neuroscience
+// NeuroHarmonic - Complete Frequency Data
+// Brainwave states, Solfeggio frequencies, and presets
 
 export interface BrainwaveState {
   id: string;
   name: string;
   range: [number, number];
-  defaultFreq: number;
+  defaultFrequency: number;
   color: string;
   gradient: string;
+  glowColor: string;
+  icon: string;
   description: string;
   benefits: string[];
-  useCases: string[];
-  recommendedDuration: { min: number; max: number; optimal: number };
-  complementaryFrequencies: string[];
+  presets: BrainwavePreset[];
+}
+
+export interface BrainwavePreset {
+  id: string;
+  name: string;
+  frequency: number;
+  duration: number; // minutes
+  description: string;
+  solfeggioLayers?: number[];
+  carrierFrequency?: number;
 }
 
 export const BRAINWAVE_STATES: Record<string, BrainwaveState> = {
@@ -20,134 +30,121 @@ export const BRAINWAVE_STATES: Record<string, BrainwaveState> = {
     id: 'delta',
     name: 'Delta',
     range: [0.5, 4],
-    defaultFreq: 2,
-    color: '#6366f1',
-    gradient: 'linear-gradient(135deg, #312e81 0%, #6366f1 50%, #818cf8 100%)',
-    description: 'The deepest brainwave state, associated with dreamless sleep, profound healing, and physical regeneration.',
+    defaultFrequency: 2,
+    color: '#7C3AED',
+    gradient: 'linear-gradient(135deg, #4C1D95 0%, #7C3AED 50%, #A78BFA 100%)',
+    glowColor: 'rgba(124, 58, 237, 0.5)',
+    icon: '🌙',
+    description: 'Deep sleep, healing, and regeneration. The slowest brainwaves associated with dreamless sleep and profound physical restoration.',
     benefits: [
       'Deep restorative sleep',
       'Physical healing & regeneration',
       'Immune system boost',
-      'Release of growth hormone',
-      'Unconscious mind access'
+      'Growth hormone release',
+      'Pain reduction',
+      'Anti-aging effects'
     ],
-    useCases: [
-      'Pre-sleep preparation',
-      'Recovery from illness',
-      'Deep meditation practice',
-      'Chronic pain relief',
-      'Anti-aging protocols'
-    ],
-    recommendedDuration: { min: 20, max: 60, optimal: 45 },
-    complementaryFrequencies: ['174', '285']
+    presets: [
+      { id: 'deep-sleep', name: 'Deep Sleep', frequency: 1.5, duration: 45, description: 'Descend into restorative delta sleep', solfeggioLayers: [174] },
+      { id: 'physical-healing', name: 'Physical Healing', frequency: 2.5, duration: 30, description: 'Activate cellular repair and regeneration', solfeggioLayers: [285] },
+      { id: 'regeneration', name: 'Regeneration', frequency: 3, duration: 30, description: 'Deep tissue and organ recovery', solfeggioLayers: [174, 285] }
+    ]
   },
   theta: {
     id: 'theta',
     name: 'Theta',
     range: [4, 8],
-    defaultFreq: 6,
-    color: '#8b5cf6',
-    gradient: 'linear-gradient(135deg, #5b21b6 0%, #8b5cf6 50%, #a78bfa 100%)',
-    description: 'The gateway to deeper consciousness, creativity, and profound meditation. The realm of dreams and intuition.',
+    defaultFrequency: 6,
+    color: '#8B5CF6',
+    gradient: 'linear-gradient(135deg, #5B21B6 0%, #8B5CF6 50%, #C4B5FD 100%)',
+    glowColor: 'rgba(139, 92, 246, 0.5)',
+    icon: '🌌',
+    description: 'Deep meditation, creativity, and REM sleep. The gateway to the subconscious mind and profound insights.',
     benefits: [
-      'Enhanced creativity',
       'Deep meditation states',
+      'Enhanced creativity',
+      'Emotional healing',
       'Memory consolidation',
-      'Emotional processing',
       'Intuitive insights',
-      'Vivid imagery & visualization'
+      'Vivid visualization'
     ],
-    useCases: [
-      'Creative brainstorming',
-      'Meditation deepening',
-      'Lucid dream induction',
-      'Trauma processing',
-      'Shamanic journeying',
-      'Hypnotherapy support'
-    ],
-    recommendedDuration: { min: 15, max: 45, optimal: 30 },
-    complementaryFrequencies: ['396', '417', '528']
+    presets: [
+      { id: 'deep-meditation', name: 'Deep Meditation', frequency: 5, duration: 30, description: 'Journey into profound meditative states', solfeggioLayers: [852] },
+      { id: 'creative-flow', name: 'Creative Flow', frequency: 7, duration: 25, description: 'Unlock creative inspiration and ideas', solfeggioLayers: [741] },
+      { id: 'memory-enhancement', name: 'Memory Enhancement', frequency: 6, duration: 20, description: 'Strengthen memory consolidation', solfeggioLayers: [417] }
+    ]
   },
   alpha: {
     id: 'alpha',
     name: 'Alpha',
     range: [8, 13],
-    defaultFreq: 10,
-    color: '#06b6d4',
-    gradient: 'linear-gradient(135deg, #0e7490 0%, #06b6d4 50%, #22d3ee 100%)',
-    description: 'The bridge between conscious and subconscious. A state of relaxed alertness, calm focus, and stress reduction.',
+    defaultFrequency: 10,
+    color: '#00FFD1',
+    gradient: 'linear-gradient(135deg, #0D9488 0%, #00FFD1 50%, #6EE7B7 100%)',
+    glowColor: 'rgba(0, 255, 209, 0.5)',
+    icon: '🧘',
+    description: 'Relaxed alertness and calm focus. The bridge between conscious thinking and the subconscious.',
     benefits: [
       'Stress reduction',
       'Calm mental clarity',
       'Enhanced learning',
+      'Positive mood',
       'Mind-body connection',
-      'Positive mood elevation',
       'Present moment awareness'
     ],
-    useCases: [
-      'Pre-presentation calm',
-      'Study sessions',
-      'Light meditation',
-      'Anxiety reduction',
-      'Creative flow states',
-      'Mindfulness practice'
-    ],
-    recommendedDuration: { min: 10, max: 30, optimal: 20 },
-    complementaryFrequencies: ['528', '639', '741']
+    presets: [
+      { id: 'calm-focus', name: 'Calm Focus', frequency: 10, duration: 20, description: 'Achieve relaxed yet alert concentration', solfeggioLayers: [528] },
+      { id: 'stress-relief', name: 'Stress Relief', frequency: 9, duration: 15, description: 'Release tension and find peace', solfeggioLayers: [396, 528] },
+      { id: 'light-meditation', name: 'Light Meditation', frequency: 8.5, duration: 20, description: 'Gentle mindfulness and presence', solfeggioLayers: [639] }
+    ]
   },
   beta: {
     id: 'beta',
     name: 'Beta',
     range: [13, 30],
-    defaultFreq: 18,
-    color: '#f59e0b',
-    gradient: 'linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%)',
-    description: 'Active, alert consciousness. The state of focused attention, problem-solving, and engaged thinking.',
+    defaultFrequency: 18,
+    color: '#FFB800',
+    gradient: 'linear-gradient(135deg, #D97706 0%, #FFB800 50%, #FDE047 100%)',
+    glowColor: 'rgba(255, 184, 0, 0.5)',
+    icon: '⚡',
+    description: 'Active thinking, concentration, and problem-solving. The state of focused mental engagement.',
     benefits: [
-      'Sharp mental focus',
+      'Sharp concentration',
       'Active problem-solving',
       'Quick thinking',
       'Logical analysis',
       'Task completion',
-      'Alert awareness'
+      'Mental alertness'
     ],
-    useCases: [
-      'Deep work sessions',
-      'Complex problem-solving',
-      'Active learning',
-      'Writing & analysis',
-      'ADHD focus support',
-      'Morning activation'
-    ],
-    recommendedDuration: { min: 15, max: 90, optimal: 45 },
-    complementaryFrequencies: ['741', '852']
+    presets: [
+      { id: 'concentration', name: 'Concentration', frequency: 18, duration: 45, description: 'Deep focused work and study', solfeggioLayers: [417] },
+      { id: 'problem-solving', name: 'Problem Solving', frequency: 20, duration: 30, description: 'Analytical thinking and solutions', solfeggioLayers: [741] },
+      { id: 'alertness', name: 'Alertness', frequency: 15, duration: 20, description: 'Wake up and energize your mind', solfeggioLayers: [417] }
+    ]
   },
   gamma: {
     id: 'gamma',
     name: 'Gamma',
     range: [30, 100],
-    defaultFreq: 40,
-    color: '#ec4899',
-    gradient: 'linear-gradient(135deg, #be185d 0%, #ec4899 50%, #f472b6 100%)',
-    description: 'The highest frequency state, associated with peak mental performance, transcendent experiences, and cognitive binding.',
+    defaultFrequency: 40,
+    color: '#FF00FF',
+    gradient: 'linear-gradient(135deg, #A21CAF 0%, #FF00FF 50%, #F5D0FE 100%)',
+    glowColor: 'rgba(255, 0, 255, 0.5)',
+    icon: '✨',
+    description: 'Peak cognitive performance and transcendent awareness. The highest frequency state associated with insight and unity.',
     benefits: [
-      'Peak cognitive performance',
+      'Peak mental performance',
       'Heightened perception',
       'Information synthesis',
-      'Insight & "aha" moments',
-      'Transcendent awareness',
+      'Profound insights',
+      'Expanded consciousness',
       'Enhanced memory recall'
     ],
-    useCases: [
-      'Breakthrough thinking',
-      'Peak performance states',
-      'Advanced meditation',
-      'Cognitive enhancement',
-      'Pre-competition focus',
-      'Complex learning integration'
-    ],
-    recommendedDuration: { min: 5, max: 20, optimal: 10 },
-    complementaryFrequencies: ['852', '963']
+    presets: [
+      { id: 'insight', name: 'Insight', frequency: 40, duration: 15, description: 'Breakthrough moments and clarity', solfeggioLayers: [963] },
+      { id: 'peak-awareness', name: 'Peak Awareness', frequency: 42, duration: 10, description: 'Heightened sensory processing', solfeggioLayers: [852, 963] },
+      { id: 'cognitive-boost', name: 'Cognitive Boost', frequency: 38, duration: 10, description: 'Rapid cognitive enhancement', solfeggioLayers: [741] }
+    ]
   }
 };
 
@@ -161,106 +158,28 @@ export interface SolfeggioFrequency {
 }
 
 export const SOLFEGGIO_FREQUENCIES: SolfeggioFrequency[] = [
-  {
-    hz: 174,
-    name: 'Foundation',
-    intention: 'Security & Grounding',
-    color: '#8b4513',
-    description: 'The lowest Solfeggio frequency, providing a sense of security and grounding. Reduces pain and stress at a foundational level.'
-  },
-  {
-    hz: 285,
-    name: 'Quantum Healing',
-    intention: 'Cellular Regeneration',
-    color: '#ff4500',
-    description: 'Influences energy fields to heal and regenerate tissues. Restructures damaged organs by sending them the energy to return to optimal form.'
-  },
-  {
-    hz: 396,
-    name: 'Liberation',
-    intention: 'Releasing Fear & Guilt',
-    chakra: 'Root',
-    color: '#ff0000',
-    description: 'Liberates from guilt and fear, the fundamental obstacles to realization. Cleanses trauma from the root chakra.'
-  },
-  {
-    hz: 417,
-    name: 'Transformation',
-    intention: 'Facilitating Change',
-    chakra: 'Sacral',
-    color: '#ff7f00',
-    description: 'Produces energy to bring about change. Clears destructive influences of past events and puts you in touch with an inexhaustible source of energy.'
-  },
-  {
-    hz: 528,
-    name: 'Miracle Tone',
-    intention: 'DNA Repair & Transformation',
-    chakra: 'Solar Plexus',
-    color: '#ffff00',
-    description: 'The "Love Frequency." Said to repair DNA and bring transformation. The most famous Solfeggio frequency, used for healing and miracles.'
-  },
-  {
-    hz: 639,
-    name: 'Connection',
-    intention: 'Harmonizing Relationships',
-    chakra: 'Heart',
-    color: '#00ff00',
-    description: 'Enables creation of harmonious relationships. Enhances communication, understanding, tolerance, and love.'
-  },
-  {
-    hz: 741,
-    name: 'Awakening',
-    intention: 'Intuition & Expression',
-    chakra: 'Throat',
-    color: '#0000ff',
-    description: 'Awakens intuition and promotes self-expression. Cleans cells of toxins and leads to a purer, more stable spiritual life.'
-  },
-  {
-    hz: 852,
-    name: 'Intuition',
-    intention: 'Returning to Spiritual Order',
-    chakra: 'Third Eye',
-    color: '#4b0082',
-    description: 'Raises awareness and returns to spiritual order. Opens communication with the higher self and universe.'
-  },
-  {
-    hz: 963,
-    name: 'Divine Connection',
-    intention: 'Oneness & Transcendence',
-    chakra: 'Crown',
-    color: '#9400d3',
-    description: 'Awakens the perfect state of oneness. Enables direct connection with Spirit, light, and all-embracing unity.'
-  }
+  { hz: 174, name: 'Foundation', intention: 'Pain Reduction', color: '#8B4513', description: 'The lowest Solfeggio tone, grounding and reducing pain' },
+  { hz: 285, name: 'Quantum', intention: 'Tissue Regeneration', color: '#FF4500', description: 'Influences energy fields for healing and tissue repair' },
+  { hz: 396, name: 'Liberation', intention: 'Release Fear', chakra: 'Root', color: '#FF0000', description: 'Liberates from guilt and fear, cleanses trauma' },
+  { hz: 417, name: 'Change', intention: 'Facilitate Change', chakra: 'Sacral', color: '#FF7F00', description: 'Clears negativity and facilitates positive change' },
+  { hz: 528, name: 'Miracle', intention: 'DNA Repair', chakra: 'Solar Plexus', color: '#FFFF00', description: 'The love frequency, said to repair DNA and bring transformation' },
+  { hz: 639, name: 'Connection', intention: 'Relationships', chakra: 'Heart', color: '#00FF00', description: 'Enhances communication, understanding, and love' },
+  { hz: 741, name: 'Awakening', intention: 'Expression', chakra: 'Throat', color: '#0000FF', description: 'Awakens intuition and promotes self-expression' },
+  { hz: 852, name: 'Intuition', intention: 'Third Eye', chakra: 'Third Eye', color: '#4B0082', description: 'Returns to spiritual order, opens third eye' },
+  { hz: 963, name: 'Divine', intention: 'Oneness', chakra: 'Crown', color: '#9400D3', description: 'Connects with higher self and universal consciousness' }
 ];
 
-export interface CarrierFrequency {
-  hz: number;
-  name: string;
-  quality: string;
-}
-
-export const CARRIER_FREQUENCIES: CarrierFrequency[] = [
-  { hz: 200, name: 'Deep Foundation', quality: 'Warm, grounding base tone' },
-  { hz: 250, name: 'Earth Resonance', quality: 'Rich, embodied sensation' },
-  { hz: 300, name: 'Heart Center', quality: 'Balanced, centered feeling' },
-  { hz: 350, name: 'Solar Warmth', quality: 'Energizing, empowering' },
-  { hz: 400, name: 'Clear Mind', quality: 'Bright, focused clarity' },
-  { hz: 432, name: 'Universal Harmony', quality: 'Natural, cosmic alignment' },
-  { hz: 440, name: 'Concert Pitch', quality: 'Familiar, conventional' },
-  { hz: 500, name: 'Ethereal', quality: 'Light, transcendent quality' }
+export const CARRIER_FREQUENCIES = [
+  { hz: 100, name: 'Deep Base', quality: 'Very low, grounding' },
+  { hz: 150, name: 'Foundation', quality: 'Warm, embodied' },
+  { hz: 200, name: 'Heart', quality: 'Balanced, centered' },
+  { hz: 250, name: 'Solar', quality: 'Energizing' },
+  { hz: 300, name: 'Standard', quality: 'Clear, neutral' },
+  { hz: 350, name: 'Bright', quality: 'Uplifting' },
+  { hz: 400, name: 'Mental', quality: 'Sharp, focused' },
+  { hz: 432, name: 'Universal', quality: 'Natural harmony' },
+  { hz: 440, name: 'Concert', quality: 'Standard pitch' },
+  { hz: 500, name: 'Ethereal', quality: 'Light, transcendent' }
 ];
 
-export const DEFAULT_CARRIER_FREQUENCY = 300;
-
-export interface NoiseType {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-}
-
-export const NOISE_TYPES: NoiseType[] = [
-  { id: 'white', name: 'White Noise', description: 'Equal energy at all frequencies - crisp, bright masking', color: '#ffffff' },
-  { id: 'pink', name: 'Pink Noise', description: 'Balanced, natural sound like rainfall or wind', color: '#ffb6c1' },
-  { id: 'brown', name: 'Brown Noise', description: 'Deep, rumbling bass - like thunder or waterfalls', color: '#8b4513' }
-];
+export const DURATIONS = [5, 10, 15, 20, 30, 45, 60, 90, 120];

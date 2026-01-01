@@ -2,22 +2,22 @@
 
 import { motion } from 'framer-motion';
 import type { HTMLMotionProps } from 'framer-motion';
-import type { ReactNode } from 'react';
+import type { ReactNode, CSSProperties } from 'react';
 
-interface CardProps extends HTMLMotionProps<'div'> {
+interface CardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
   children: ReactNode;
-  variant?: 'default' | 'elevated' | 'glass' | 'gradient';
+  variant?: 'default' | 'glass' | 'elevated' | 'gradient';
   padding?: 'none' | 'sm' | 'md' | 'lg';
   interactive?: boolean;
   glowColor?: string;
   gradient?: string;
 }
 
-const paddingSizes = {
+const paddingSizes: Record<string, string> = {
   none: '0',
-  sm: 'var(--spacing-sm)',
-  md: 'var(--spacing-md)',
-  lg: 'var(--spacing-lg)'
+  sm: 'var(--space-sm)',
+  md: 'var(--space-md)',
+  lg: 'var(--space-lg)'
 };
 
 export function Card({
@@ -30,21 +30,16 @@ export function Card({
   style,
   ...props
 }: CardProps) {
-  const baseStyles: React.CSSProperties = {
+  const baseStyles: CSSProperties = {
     borderRadius: 'var(--radius-lg)',
     padding: paddingSizes[padding],
-    transition: 'all var(--transition-medium)'
+    transition: 'all var(--transition-base)'
   };
 
-  const variantStyles: Record<string, React.CSSProperties> = {
+  const variantStyles: Record<string, CSSProperties> = {
     default: {
-      background: 'var(--bg-secondary)',
+      background: 'var(--bg-tertiary)',
       border: '1px solid var(--border-subtle)'
-    },
-    elevated: {
-      background: 'var(--bg-secondary)',
-      border: '1px solid var(--border-subtle)',
-      boxShadow: 'var(--shadow-soft)'
     },
     glass: {
       background: 'var(--bg-glass)',
@@ -52,14 +47,19 @@ export function Card({
       WebkitBackdropFilter: 'blur(20px)',
       border: '1px solid var(--border-subtle)'
     },
+    elevated: {
+      background: 'var(--bg-elevated)',
+      border: '1px solid var(--border-subtle)',
+      boxShadow: 'var(--shadow-md)'
+    },
     gradient: {
-      background: gradient || 'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)',
+      background: gradient || 'linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-elevated) 100%)',
       border: '1px solid var(--border-subtle)'
     }
   };
 
-  const glowStyles: React.CSSProperties = glowColor ? {
-    boxShadow: `0 0 20px ${glowColor}40, 0 0 40px ${glowColor}20`
+  const glowStyles: CSSProperties = glowColor ? {
+    boxShadow: `0 0 30px ${glowColor}30, 0 0 60px ${glowColor}15`
   } : {};
 
   return (
